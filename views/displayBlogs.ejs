@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        var blogs = [];
+        $("#getBlogs").click(function () {
+          $.get("http://localhost:4000/blogs/all", function (blogs) {
+            blogs.forEach((blog) => {
+              $("#blogList").append("<li>" + blog.title + "<br>" + blog.author + "<br>"+ blog.text + "</li>");
+            });
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Display Blogs</h1>
+    <button id="getBlogs">Get Blogs</button>
+    <ul id="blogList"></ul>
+
+
+
+
+    <a href="http://localhost:4000/blogs/all?sort=asc">Click Here for Ascending Order</a>
+    <br>
+    <a href="http://localhost:4000/blogs/all?sort=desc">Click Here for Descending Order</a>
+
+
+  </body>
+</html>
