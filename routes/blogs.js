@@ -2,33 +2,51 @@ var express = require('express');
 let { blogPosts } = require('../sampleBlogs');
 var router = express.Router();
 
+const { blogsDB } = require("../mongo");
+
+
+const getPostsCollectionLength = async ()=>{
+  const collection = await blogsDB().collection("posts");
+  const posts = await collection.count()
+
+  //const posts = db.posts.count() Changed to above for mongo
+  let counter = 0;
+  
+  return posts
+}
 
 ///////////////////////////////////////////////////////////////////
-router.get("/postblog", function (req, res, next) {
+router.get("/postblog", async function (req, res, next) {
   res.render('postBlog');
 })
 
-router.post("/submit", function (req, res, next) {
-  console.log(req.body)
-  console.log("bloglist before ", blogPosts)
-  const today = new Date()
+router.post("/submit", async function (req, res, next) {
+  
+  const today =  new Date()
   const newPost = {
       title: req.body.title,
       text: req.body.text,
       author: req.body.author,
       createdAt: today.toISOString(),
-      id: String(blogPosts.length + 1)
+      id: getPostsCollectionLength() + 1
   }
-  blogPosts.push(newPost)
-  console.log("bloglist after ", blogPosts)
+  const collection = await blogsDB().collection("posts");
+  await collection.insertOne(newPost)
+
+  //  blogPosts.push(newPost)  Changed to above for mongo
+  
 
   res.send("OK");
 })
 
 
-/* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.json("Blogs Index Route");
+
+
+/////////////* GET users listing. *////////////////////////
+router.get("/", async function (req, res, next) {
+  const collection = await blogsDB().collection("posts");
+  const posts = await collection.find({}).toArray();
+  res.json(posts);
 });
 
 
@@ -92,33 +110,39 @@ router.get("/displaysingleblogs/:blogId", function (req, res, next){
 
 
 
+const deletePosts = async (blogId)=>{
+   const collection = await blogsDB().collection("posts");
+    await collection.deleteOne({id:blogId})
+}
 
 
-
-router.delete("/deleteblog/:blogId", function (req, res, next){
-  console.log('deleteBlog', req.params.blogId);
-  const blogId = req.params.blogId
-  const filteredBlogList = generateBlogs(blogPosts,blogId);
-  saveBlogPosts(filteredBlogList);
+router.delete("/deleteblog/:blogId",  async function (req, res, next){ 
+ 
+  const blogId = Number(req.params.blogId)
   
-  console.log(filteredBlogList);
+  await deletePosts(blogId)
+
+  // const filteredBlogList = generateBlogs(blogPosts,blogId);
+
+  // saveBlogPosts(filteredBlogList);
   
   res.send('deleteBlog');
 })
 
-function generateBlogs(blogList, blogId) {
 
-  const filterList = blogList.filter(function(blog) {
+// function generateBlogs(blogList, blogId) {
 
-    return blog.id !== blogId
-  })
+//   const filterList = blogList.filter(function(blog) {
 
-  return filterList
-}
+//     return blog.id !== blogId
+//   })
 
-function saveBlogPosts(blogList){
+//   return filterList
+// }
 
-  blogPosts = blogList
-}
+// function saveBlogPosts(blogList){
+
+//   blogPosts = blogList
+// }
 
 module.exports = router;
