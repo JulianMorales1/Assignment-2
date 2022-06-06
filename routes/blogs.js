@@ -51,49 +51,108 @@ router.get("/", async function (req, res, next) {
 
 
 ///////////////////////////////////////////////////////////////
+const getPosts = async (limit, skip, sortField, sortOrder, filterField, filterValue) => {
+    
 
-router.get("/all", function (req, res, next) {
-    const sortOrder = req.query.sort;
-    blogPosts.sort((a, b) => {
-        const aCreatedAt = a.createdAt
-        const bCreatedAt = b.createdAt
+
+    const collection = await blogsDB().collection("posts");
+
+    let queryLimit = 1000
+      if (limit !== undefined && limit !== NaN) {
+          queryLimit = limit
+      }
+    
+    let querySkip = 0
+      if(skip !== undefined && skip !== NaN) {
+        querySkip = skip
+      }
+
+    const sortObj = {}
+      if(sortField !== "" && sortField !== undefined && sortOrder !== "" && sortOrder !== undefined ) {
+    sortObj[sortField] = sortOrder
+      }
+
+    const filterObj =  {}
+      if (filterField !== "" && filterField !== undefined && filterValue !== "" && filterValue !== undefined) {
+      filterObj[filterField] = filterValue
+      }
+    
+   
+   
+    const dbResult = await collection.find(filterObj).sort(sortObj).limit(queryLimit).skip(querySkip).toArray()
+    
+    return dbResult
+  }
+
+
+
+router.get("/all", async function (req, res, next) {
+
+    const limitQueryParam = Number(req.query.limit)
+    const skipQueryParam = Number(req.query.skip)
+    const sortFieldQueryParam = req.query.sortField
+    const sortOrderQueryParam = Number(req.query.sortOrder)
+    const filterFieldQueryParam = req.query.filterField
+    const filterValueQueryParam = req.query.filterValue
+
+    
+
+    console.log(limitQueryParam)
+    console.log(skipQueryParam)
+    console.log(sortFieldQueryParam)
+    console.log(sortOrderQueryParam)
+    console.log(filterFieldQueryParam)
+    console.log(filterValueQueryParam)
+    // const sortOrder = req.query.sort;
+
+    const posts = await getPosts(limitQueryParam, skipQueryParam, sortFieldQueryParam, sortOrderQueryParam, filterFieldQueryParam, filterValueQueryParam)
+
+    
+
+    // blogPosts.sort((a, b) => {
+    //     const aCreatedAt = a.createdAt
+    //     const bCreatedAt = b.createdAt
         
-        /* Compare by date object for extra utility
-        const aCreatedAt = new Date(a.createdAt)
-        const bCreatedAt = new Date(b.createdAt) */
+    //     /* Compare by date object for extra utility
+    //     const aCreatedAt = new Date(a.createdAt)
+    //     const bCreatedAt = new Date(b.createdAt) */
 
-        if (sortOrder === "asc") {
-            if (aCreatedAt < bCreatedAt) {
-              return -1;
-            }
-            if (aCreatedAt > bCreatedAt) {
-              return 1;
-            }
-        }
-        if (sortOrder === "desc") {
-            if (aCreatedAt > bCreatedAt) {
-              return -1;
-            }
-            if (aCreatedAt < bCreatedAt) {
-              return 1;
-            }
-        }
-        return 0;
-      })
+    //     if (sortOrder === "asc") {
+    //         if (aCreatedAt < bCreatedAt) {
+    //           return -1;
+    //         }
+    //         if (aCreatedAt > bCreatedAt) {
+    //           return 1;
+    //         }
+    //     }
+    //     if (sortOrder === "desc") {
+    //         if (aCreatedAt > bCreatedAt) {
+    //           return -1;
+    //         }
+    //         if (aCreatedAt < bCreatedAt) {
+    //           return 1;
+    //         }
+    //     }
+    //     return 0;
+      // })
 
-  res.json(blogPosts);
+  res.json(posts);
 });
 
-router.get("/singleblog/:blogId", function (req, res, next) {
-  const blogId = req.params.blogId;
-  res.json(findBlogId(blogId));
-});
-
-const findBlogId = (blogId) => {
-  const foundBlog = blogPosts.find(element => element.id === blogId);
-  return foundBlog;
+const getSinglePost = async (postId)=>{
+  const collection = await blogsDB().collection("posts");
+  const result = await collection.find({id:postId}).toArray();
+  return result
 };
 
+router.get("/singleblog/:blogId", async function (req, res, next) {
+  const blogId = Number(req.params.blogId);
+  const postId = await getSinglePost(blogId)
+
+  console.log(postId)
+
+  res.json(postId);
+});
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
